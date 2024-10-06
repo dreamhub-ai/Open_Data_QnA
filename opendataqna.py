@@ -1,14 +1,16 @@
 import asyncio
 import argparse
 import uuid
-
+import json
 from agents import EmbedderAgent, BuildSQLAgent, DebugSQLAgent, ValidateSQLAgent, ResponseAgent,VisualizeAgent
 from utilities import (PROJECT_ID, PG_REGION, BQ_REGION, EXAMPLES, LOGGING, VECTOR_STORE,
                        BQ_OPENDATAQNA_DATASET_NAME, SPANNER_REGION)
 from dbconnectors import bqconnector, pgconnector, firestoreconnector, spannerconnector
 from embeddings.store_embeddings import add_sql_embedding
+import os
 
-
+OUTPUT_FILE_embedding = "/Users/yonierlich/repos/conversational/tests/sql_generation_embed.json"
+OUTPUT_FILE_respond = "/Users/yonierlich/repos/conversational/tests/sql_generation_respond.json"
 
 #Based on VECTOR STORE in config.ini initialize vector connector and region
 if VECTOR_STORE=='bigquery-vector':
@@ -190,7 +192,7 @@ async def generate_sql(session_id,
         SQLBuilder = BuildSQLAgent(SQLBuilder_model)
         SQLChecker = ValidateSQLAgent(SQLChecker_model)
         SQLDebugger = DebugSQLAgent(SQLDebugger_model)
-
+        # raw_user_question =user_question
         re_written_qe=user_question
 
         print("Getting the history for the session.......\n")
@@ -302,8 +304,43 @@ async def generate_sql(session_id,
 
         # print(f'\n\n AUDIT_TEXT: \n {AUDIT_TEXT}')
 
+
+
         if LOGGING: 
-            bqconnector.make_audit_entry(DATA_SOURCE, user_grouping, SQLBuilder_model, user_question, final_sql, found_in_vector, "", process_step, error_msg,AUDIT_TEXT)  
+            bqconnector.make_audit_entry(DATA_SOURCE, user_grouping, SQLBuilder_model, user_question, final_sql, found_in_vector, "", process_step, error_msg,AUDIT_TEXT)
+            # Create JSON output
+        print('save output')
+
+
+        file_path = OUTPUT_FILE_embedding
+        try:
+            # Initialize data
+            data = {}
+
+            # Check if file exists and is not empty
+            if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+                # Load existing data
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+
+            # Update or add new data
+            data[user_question] = {
+                "similar_sql": similar_sql,
+                "generated_sql": final_sql
+            }
+
+            # Write updated data back to file
+            with open(file_path, 'w') as f:
+                json.dump(data, f, indent=2)
+
+            print(f"JSON file updated: {file_path}")
+
+
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON from {file_path}: {e}")
+            print("Creating a new JSON file with the current data.")
+
+
 
 
     except Exception as e:
@@ -316,7 +353,7 @@ async def generate_sql(session_id,
             bqconnector.make_audit_entry(DATA_SOURCE, user_grouping, SQLBuilder_model, user_question, final_sql, found_in_vector, "", process_step, error_msg,AUDIT_TEXT)  
 
     if not invalid_response:
-        firestoreconnector.log_chat(session_id,user_question,final_sql,user_id)
+        # firestoreconnector.log_chat(session_id,user_question,final_sql,user_id)
         print("Session history persisted")  
 
 
@@ -498,6 +535,9 @@ async def run_pipeline(session_id,
     else:
         results_df=final_sql
         _resp=final_sql
+    print('hi you are in pipline')
+
+
 
     return final_sql, results_df, _resp
 
@@ -593,6 +633,7 @@ async def embed_sql(session_id,user_grouping,user_question,generate_sql):
         embedded = await add_sql_embedding(user_question, generate_sql,user_grouping)
         invalid_response=False
 
+
     except Exception as e: 
         embedded="Issue was encountered while embedding the SQL as example."  + str(e)
         invalid_response=True
@@ -678,6 +719,10 @@ if __name__ == '__main__':
         example_similarity_threshold=args.example_similarity_threshold,
         num_sql_matches=args.num_sql_matches
     ))
+    file_path = OUTPUT_FILE_respond
+    user_question =args.user_question
+
+
 
     # user_question = "How many +18 movies have a rating above 4?"
 

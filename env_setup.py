@@ -1,7 +1,8 @@
 import asyncio
 from google.cloud import bigquery
 import google.api_core
-
+from dotenv import load_dotenv
+load_dotenv()
 from embeddings import retrieve_embeddings, store_schema_embeddings, setup_kgq_table, load_kgq_df, store_kgq_embeddings
 
 from utilities import (PG_REGION, PG_INSTANCE, PG_DATABASE, PG_USER, PG_PASSWORD,
