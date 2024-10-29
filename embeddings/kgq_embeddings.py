@@ -180,7 +180,9 @@ async def store_kgq_embeddings(df_kgq,
         database = instance.database(database_name)
 
         example_sql_details_chunked = []
-
+        print('here the uploads begins')
+        print('the data: ')
+        print(df_kgq)
         for _, row_aug in df_kgq.iterrows():
             example_user_question = str(row_aug['prompt'])
             example_generated_sql = str(row_aug['sql'])
@@ -247,7 +249,6 @@ def load_kgq_df():
     df_kgq = pd.read_csv(file_path)
     df_kgq = df_kgq.loc[:, ["prompt", "sql", "user_grouping"]]
     df_kgq = df_kgq.dropna()
-
     return df_kgq
 
 

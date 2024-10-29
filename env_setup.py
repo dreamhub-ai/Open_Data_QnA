@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 import asyncio
 from google.cloud import bigquery
 import google.api_core
@@ -239,15 +241,15 @@ def get_embeddings():
     current_dir = os.getcwd()
     root_dir = os.path.expanduser('~')  # Start at the user's home directory
 
-    while current_dir != root_dir:
-        for dirpath, dirnames, filenames in os.walk(current_dir):
-            config_path = os.path.join(dirpath, 'data_source_list.csv')
-            if os.path.exists(config_path):
-                file_path = config_path  # Update root_dir to the found directory
-                break  # Stop outer loop once found
+    # while current_dir != root_dir:
+    #     for dirpath, dirnames, filenames in os.walk(current_dir):
+    #         config_path = os.path.join(dirpath, 'data_source_list.csv')
+    #         if os.path.exists(config_path):
+    #             file_path = config_path  # Update root_dir to the found directory
+    #             break  # Stop outer loop once found
 
-        current_dir = os.path.dirname(current_dir)
-
+        # current_dir = os.path.dirname(current_dir)
+    file_path = '/Users/yonierlich/repos/conversational/data_source_list.csv'
     print("Source Found at Path :: " + file_path)
 
     # Load the file
