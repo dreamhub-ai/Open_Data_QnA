@@ -391,7 +391,8 @@ def get_results(user_grouping, final_sql, invalid_response=False, EXECUTE_FINAL_
 
     return result_df,invalid_response
 
-def get_response(session_id,user_question,result_df,Responder_model='gemini-1.0-pro'):
+
+def get_response(session_id, user_question, result_df, final_sql ,Responder_model='gemini-1.0-pro'):
     try:
         Responder = ResponseAgent(Responder_model)
 
@@ -402,17 +403,18 @@ def get_response(session_id,user_question,result_df,Responder_model='gemini-1.0-
             if session_history is None or not session_history:
                 print("No records for the session. Not rewriting the question\n")
             else:
-                concated_questions,re_written_qe=Responder.rewrite_question(user_question,session_history)
-                user_question=re_written_qe
-        
-        _resp=Responder.run(user_question, result_df)
-        invalid_response=False
-    except Exception as e: 
-        print(f"An error occured. Aborting... Error Message: {e}")
-        _resp= "Error has been encountered :: " + str(e)
-        invalid_response=True
+                concated_questions, re_written_qe = Responder.rewrite_question(user_question, session_history)
+                user_question = re_written_qe
 
-    return _resp,invalid_response
+        _resp = Responder.run(user_question, result_df, final_sql)
+        invalid_response = False
+    except Exception as e:
+        print(f"An error occured. Aborting... Error Message: {e}")
+        _resp = "Error has been encountered :: " + str(e)
+        invalid_response = True
+
+    return _resp, invalid_response
+
 
 ############################
 ###_____RUN PIPELINE_____###
@@ -492,7 +494,8 @@ async def run_pipeline(session_id,
                                     EXECUTE_FINAL_SQL=EXECUTE_FINAL_SQL)
 
         if not invalid_response:
-            _resp,invalid_response=get_response(session_id,user_question,results_df.to_json(orient='records'),Responder_model=Responder_model)
+            _resp, invalid_response = get_response(session_id, user_question, results_df.to_json(orient='records'),final_sql=final_sql,
+                                                   Responder_model=Responder_model)
         else:
             _resp=results_df
     else:

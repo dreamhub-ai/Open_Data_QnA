@@ -1,25 +1,24 @@
 from abc import ABC
 from vertexai.language_models import CodeChatModel
 from vertexai.generative_models import GenerativeModel, Content, Part, GenerationConfig
-from .core import Agent 
+from .core import Agent
 import pandas as pd
 import json
 from datetime import datetime
-from dbconnectors import pgconnector,bqconnector,firestoreconnector
+from dbconnectors import pgconnector, bqconnector, firestoreconnector
 from utilities import PROMPTS, format_prompt
 from google.cloud.aiplatform import telemetry
-import vertexai 
-from utilities import PROJECT_ID, PG_REGION
+import vertexai
+from utilities import PROJECT_ID, PG_REGION, PromptBuilder
 from vertexai.generative_models import GenerationConfig
 
 vertexai.init(project=PROJECT_ID, location=PG_REGION)
 
 
 class BuildSQLAgent(Agent, ABC):
-
     agentType: str = "BuildSQLAgent"
 
-    def __init__(self, model_id = 'gemini-1.5-pro'): 
+    def __init__(self, model_id='gemini-1.5-pro'):
         super().__init__(model_id=model_id)
 
 
@@ -45,19 +44,19 @@ class BuildSQLAgent(Agent, ABC):
             usecase_context = PROMPTS[f'usecase_{source_type}_{user_grouping}']
         else:
             usecase_context = "No extra context for the usecase is provided"
-            
-        context_prompt = PROMPTS[f'buildsql_{source_type}']
 
 
-        context_prompt = format_prompt(context_prompt,
-                                       specific_data_types = specific_data_types,
-                                       not_related_msg = not_related_msg, 
-                                       usecase_context = usecase_context,
-                                       similar_sql=similar_sql, 
-                                       tables_schema=tables_schema, 
-                                       columns_schema = columns_schema)
+        placeholders = {
+            'specific_data_types': specific_data_types,
+            'not_related_msg':not_related_msg,
+            'usecase_context': usecase_context,
+            'similar_sql': similar_sql,
+            'tables_schema': tables_schema,
+            'columns_schema':columns_schema
+        }
+        builder = PromptBuilder(PROMPTS, 'buildsql_spanner')
+        context_prompt = builder.build_prompt(placeholders=placeholders)
 
-        # print(f"Prompt to Build SQL: \n{context_prompt}") 
 
             
         # Chat history Retrieval

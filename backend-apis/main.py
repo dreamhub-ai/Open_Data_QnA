@@ -158,7 +158,7 @@ def getSQLResult():
 
 
     if not invalid_response:
-        _resp,invalid_response=get_response(session_id,user_question,result_df.to_json(orient='records'))
+        _resp,invalid_response=get_response(session_id,user_question,result_df.to_json(orient='records'), final_sql=generated_sql)
         if not invalid_response:
             responseDict = { 
                     "ResponseCode" : 200, 
@@ -319,8 +319,9 @@ async def getSummary():
    
     user_question = envelope.get('user_question')
     sql_results = envelope.get('sql_results')
+    final_sql = envelope.get('final_sql')
 
-    result,invalid_response=get_response(user_question,sql_results)
+    result,invalid_response=get_response(user_question,sql_results, final_sql=final_sql)
     
     if not invalid_response:
         responseDict = { 
@@ -371,7 +372,7 @@ async def getNaturalResponse():
         result_df,invalid_response=get_results(user_grouping,generated_sql)
         
         if not invalid_response:
-            result,invalid_response=get_response(user_question,result_df.to_json(orient='records'))
+            result,invalid_response=get_response(user_question,result_df.to_json(orient='records'), final_sql=generated_sql)
 
             if not invalid_response:
                 responseDict = { 

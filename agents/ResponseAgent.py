@@ -1,11 +1,12 @@
-import json 
+import json
 from abc import ABC
 from .core import Agent
-from utilities import PROMPTS, format_prompt 
+from utilities import PROMPTS, format_prompt
 from vertexai.generative_models import HarmCategory, HarmBlockThreshold
 from google.cloud.aiplatform import telemetry
-import vertexai 
-from utilities import PROJECT_ID, PG_REGION
+import vertexai
+from utilities import PROJECT_ID, PG_REGION, PromptBuilder
+
 vertexai.init(project=PROJECT_ID, location=PG_REGION)
 
 
@@ -30,21 +31,15 @@ class ResponseAgent(Agent, ABC):
                 str: The generated natural language response.
     """
 
-
     agentType: str = "ResponseAgent"
 
-    def run(self, user_question, sql_result):
+    def run(self, user_question, sql_result, final_sql):
 
-        context_prompt = PROMPTS['nl_reponse']
+        builder = PromptBuilder(PROMPTS, 'nl_response')
 
+        context_prompt = builder.build_prompt({'user_question': user_question, 'sql_result': sql_result, 'final_sql':final_sql})
 
-
-        context_prompt = format_prompt(context_prompt,
-                                       user_question = user_question,
-                                       sql_result = sql_result)
-                                       
-        # print(f"Prompt for Natural Language Response: \n{context_prompt}")
-
+        print(f"Prompt for Natural Language Response: \n{context_prompt}")
 
         if 'gemini' in self.model_id:
             with telemetry.tool_context_manager('opendataqna-response-v2'):
